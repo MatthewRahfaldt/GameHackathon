@@ -1,0 +1,65 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+
+
+
+public class ControllerManager : MonoBehaviour {
+	
+	private SteamVr_TrackedObject trackedObject;
+	private SteamVr_Controller.Device device;
+
+	public GameObject collide;
+	public GameObject inHand;
+
+
+	void awake() {
+		trackedObject = GetComponent<SteamVR_TrackedObject>();
+	}
+
+	void update() {
+		//used for assigning functions to buttons
+		device = SteamVR_Controller.Input((int)trackedObject.index);
+		
+		//When the grip button is compressed, grab the object
+		if(device.GetPressDown(SteamVR_Controller.ButtonMask.Grip)) {
+			if (collide) {
+				grabObject();
+			}
+		}
+
+		//When the grip button is released, release the object
+		if (Controller.GetPressUp (SteamVR_Controller.ButtonMask.Grip)) {
+			if (inHand){
+				releaseObject();
+			}
+		}
+	}
+
+	//checking for ridgidbodies
+	void OnTriggerEnter(Collider x) {
+		if (!x.GetComponent<Ridgidbody)()) {
+			return;
+		}
+		collide = x.gameObject;
+	}
+
+	//colliding object gets set to null because there is nothing in the hand
+	void OnTriggerExit(Collider x) {
+        collide = null;
+    }
+
+    //assigns inHand and changes physics to a grabbed object
+	private void grabObject() {
+		inHand = collide;
+		inHand.transform.SetParent(this.transform);
+		inHand.GetCompont<Rigidbody>().isKinematic = true;
+	}
+
+	//removes inHand and nullifies player effect on previously grabbed object
+	private void releaseObject() {
+		inHand.GetComponent<Rigidbody&gt().isKinematic = false;
+		inHand.ttransform.SetParent(null);
+	}
+
+}
