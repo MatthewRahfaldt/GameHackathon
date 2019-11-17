@@ -1,23 +1,33 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Valve.VR;
+
 
 
 
 public class ControllerManager : MonoBehaviour {
 	
-	private SteamVr_TrackedObject trackedObject;
-	private SteamVr_Controller.Device device;
+	public SteamVR_Input_Sources handType;
+	public SteamVR_Behaviour_Pose controllerPose;
+	public SteamVR_Action_Boolean grab;
+
+
+	//private SteamVR_TrackedObject trackedObject;
+	//private SteamVr_Controller.Device device;
 
 	public GameObject collide;
 	public GameObject inHand;
 
 
+	/*
 	void awake() {
 		trackedObject = GetComponent<SteamVR_TrackedObject>();
 	}
+	*/
 
 	void update() {
+		/*
 		//used for assigning functions to buttons
 		device = SteamVR_Controller.Input((int)trackedObject.index);
 		
@@ -34,6 +44,18 @@ public class ControllerManager : MonoBehaviour {
 				releaseObject();
 			}
 		}
+		*/
+
+		if (grab.GetLastStateDown(handType)) {
+			if (collide) {
+				grabObject();
+			}
+		}
+		if (grab.GetLastStateDown(handType)) {
+			if (inHand) {
+				releaseObject();
+			}
+		}
 	}
 
 	//checking for ridgidbodies
@@ -46,20 +68,34 @@ public class ControllerManager : MonoBehaviour {
 
 	//colliding object gets set to null because there is nothing in the hand
 	void OnTriggerExit(Collider x) {
+		if (!collide) {
+			return;
+		}
         collide = null;
     }
 
-    //assigns inHand and changes physics to a grabbed object
+    //assigns inHand and adds joint to a grabbed object
 	private void grabObject() {
 		inHand = collide;
-		inHand.transform.SetParent(this.transform);
-		inHand.GetCompont<Rigidbody>().isKinematic = true;
+		var joint = AddFixedJoint();
+		joint.connectedBody = objectInHand.GetComponent<Rigidbody>();
+	}
+
+	//method to add fixed joint
+	private FixedJoint AddFixedJoint() {
+		FixedJoint fx = gameObject.AddComponent<FixedJoint>();
+		fx.breakForce = 20000;
+		fx.breakTorque = 20000;
+		return fx;
 	}
 
 	//removes inHand and nullifies player effect on previously grabbed object
 	private void releaseObject() {
-		inHand.GetComponent<Rigidbody&gt().isKinematic = false;
-		inHand.ttransform.SetParent(null);
+		if (GetComponent<FixedJoint>()) {
+			GetComponent<FixedJoint>().connectedBody = null; 
+			Destroy(GetComponent<FixedJoint());
+		}
+		inHand = null;
 	}
 
 }
